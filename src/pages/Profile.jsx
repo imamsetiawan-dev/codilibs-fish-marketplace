@@ -4,7 +4,7 @@ import Layout from '../components/Layout'
 import useAuthStore from '../store/authStore'
 import { User, ShoppingBag, LogOut, MapPin, Phone, Mail, Package, Clock, CheckCircle, XCircle } from 'lucide-react'
 
-const BASE_URL = 'http://localhost:5000'
+const BASE_URL = 'https://codilibs-fish-marketplace-production.up.railway.app'
 
 function Profile() {
   const navigate = useNavigate()

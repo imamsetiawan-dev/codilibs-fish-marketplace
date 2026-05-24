@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000'
+const BASE_URL = 'https://codilibs-fish-marketplace-production.up.railway.app'
 
 // Products
 export const getProducts = async (params = {}) => {

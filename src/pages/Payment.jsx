@@ -30,7 +30,7 @@ function Payment() {
     try {
       const order_id = 'AQUA-' + Date.now()
 
-      const response = await fetch('http://localhost:5000/create-transaction', {
+      const response = await fetch('https://codilibs-fish-marketplace-production.up.railway.app/create-transaction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
