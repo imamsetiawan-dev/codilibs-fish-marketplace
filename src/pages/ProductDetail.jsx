@@ -1,38 +1,68 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import products from '../data/products'
 import useCartStore from '../store/cartStore'
 import { ShoppingCart, ArrowLeft, Star, Package, Shield, Truck } from 'lucide-react'
+import { getProductById, getProducts } from '../api/api'
 
 function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const product = products.find(p => p.id === parseInt(id))
   const addItem = useCartStore(state => state.addItem)
+  const [product, setProduct] = useState(null)
+  const [related, setRelated] = useState([])
+  const [loading, setLoading] = useState(true)
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
+  const [activeImage, setActiveImage] = useState(0)
 
   const formatRupiah = (num) =>
     'Rp ' + num.toLocaleString('id-ID')
 
-  const related = products.filter(
-    p => p.category === product?.category && p.id !== product?.id
-  )
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setLoading(true)
+      setActiveImage(0)
+      try {
+        const data = await getProductById(id)
+        setProduct(data)
+        const all = await getProducts({ category: data.category })
+        setRelated(all.filter(p => p._id !== id))
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProduct()
+  }, [id])
 
   const handleAddToCart = () => {
-    for (let i = 0; i < qty; i++) {
-      addItem(product)
-    }
+    for (let i = 0; i < qty; i++) addItem(product)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
 
   const handleBeliSekarang = () => {
-    for (let i = 0; i < qty; i++) {
-      addItem(product)
-    }
+    for (let i = 0; i < qty; i++) addItem(product)
     navigate('/checkout')
+  }
+
+  // Ambil semua gambar produk
+  const getImages = (product) => {
+    if (product.images && product.images.length > 0) return product.images
+    if (product.image) return [product.image]
+    return []
+  }
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      </Layout>
+    )
   }
 
   if (!product) {
@@ -47,6 +77,8 @@ function ProductDetail() {
       </Layout>
     )
   }
+
+  const images = getImages(product)
 
   return (
     <Layout>
@@ -71,15 +103,39 @@ function ProductDetail() {
         </Link>
 
         {/* Main Product */}
-        <div className="bg-white rounded-2xl shadow p-6 flex flex-col md:flex-row gap-8 mb-10">
+        <div className="bg-white rounded-2xl shadow p-4 md:p-6 flex flex-col md:flex-row gap-6 md:gap-8 mb-6">
 
-          {/* Image */}
+          {/* Image Gallery */}
           <div className="md:w-1/2">
+            {/* Main Image */}
             <img
-              src={product.image}
+              src={images[activeImage] || product.image}
               alt={product.name}
-              className="w-full h-80 object-cover rounded-xl"
+              className="w-full h-64 md:h-80 object-cover rounded-xl mb-3"
             />
+
+            {/* Thumbnails */}
+            {images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {images.map((img, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveImage(index)}
+                    className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
+                      activeImage === index
+                        ? 'border-primary'
+                        : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`Foto ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Info */}
@@ -88,7 +144,7 @@ function ProductDetail() {
               {product.category}
             </span>
 
-            <h1 className="text-2xl font-bold text-gray-800 mt-3 mb-2">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800 mt-3 mb-2">
               {product.name}
             </h1>
 
@@ -114,10 +170,10 @@ function ProductDetail() {
 
             {/* Price */}
             <div className="mb-4">
-              <span className="text-3xl font-bold text-primary">
+              <span className="text-2xl md:text-3xl font-bold text-primary">
                 {formatRupiah(product.price)}
               </span>
-              <span className="text-gray-400 line-through text-lg ml-3">
+              <span className="text-gray-400 line-through text-base md:text-lg ml-3">
                 {formatRupiah(product.originalPrice)}
               </span>
               <span className="ml-2 text-xs bg-accent text-white px-2 py-1 rounded-full">
@@ -126,9 +182,11 @@ function ProductDetail() {
             </div>
 
             {/* Description */}
-            <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-              {product.description}
-            </p>
+            {product.description && (
+              <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                {product.description}
+              </p>
+            )}
 
             {/* Stock */}
             <p className="text-sm text-gray-500 mb-4">
@@ -196,19 +254,40 @@ function ProductDetail() {
           </div>
         </div>
 
+        {/* Spesifikasi & Perawatan */}
+        {(product.specification || product.care) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {product.specification && (
+              <div className="bg-white rounded-2xl shadow p-5">
+                <h2 className="font-bold text-gray-800 mb-3 text-base">
+                  📋 Spesifikasi
+                </h2>
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                  {product.specification}
+                </p>
+              </div>
+            )}
+            {product.care && (
+              <div className="bg-white rounded-2xl shadow p-5">
+                <h2 className="font-bold text-gray-800 mb-3 text-base">
+                  💧 Cara Perawatan
+                </h2>
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                  {product.care}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Produk Terkait */}
         {related.length > 0 && (
           <section>
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Produk Terkait
-            </h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Produk Terkait</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {related.map(p => (
-                <div
-                  key={p.id}
-                  className="bg-white rounded-xl shadow hover:shadow-md transition overflow-hidden"
-                >
-                  <Link to={`/product/${p.id}`}>
+                <div key={p._id} className="bg-white rounded-xl shadow hover:shadow-md transition overflow-hidden">
+                  <Link to={`/product/${p._id}`}>
                     <img
                       src={p.image}
                       alt={p.name}
@@ -216,7 +295,7 @@ function ProductDetail() {
                     />
                   </Link>
                   <div className="p-3">
-                    <Link to={`/product/${p.id}`}>
+                    <Link to={`/product/${p._id}`}>
                       <h3 className="text-sm font-semibold text-gray-800 hover:text-primary line-clamp-2 mb-1">
                         {p.name}
                       </h3>

@@ -9,6 +9,8 @@ function Cart() {
   const formatRupiah = (num) =>
     'Rp ' + num.toLocaleString('id-ID')
 
+  const getItemId = (item) => item._id || item.id
+
   const ongkir = getTotalPrice() >= 200000 ? 0 : 25000
 
   if (items.length === 0) {
@@ -56,7 +58,7 @@ function Cart() {
           <div className="flex-1 space-y-4">
             {items.map(item => (
               <div
-                key={item.id}
+                key={getItemId(item)}
                 className="bg-white rounded-xl shadow p-4 flex gap-4 items-center"
               >
                 {/* Image */}
@@ -67,29 +69,29 @@ function Cart() {
                 />
 
                 {/* Info */}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-xs text-secondary font-medium mb-0.5">
                     {item.category}
                   </p>
-                  <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                  <h3 className="text-sm font-semibold text-gray-800 mb-1 line-clamp-1">
                     {item.name}
                   </h3>
-                  <p className="text-primary font-bold">
+                  <p className="text-primary font-bold text-sm">
                     {formatRupiah(item.price)}
                   </p>
                 </div>
 
                 {/* Qty Control */}
-                <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden shrink-0">
                   <button
-                    onClick={() => updateQty(item.id, item.qty - 1)}
+                    onClick={() => updateQty(getItemId(item), item.qty - 1)}
                     className="px-2 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700"
                   >
                     <Minus size={14} />
                   </button>
                   <span className="px-3 text-sm font-medium">{item.qty}</span>
                   <button
-                    onClick={() => updateQty(item.id, item.qty + 1)}
+                    onClick={() => updateQty(getItemId(item), item.qty + 1)}
                     className="px-2 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700"
                   >
                     <Plus size={14} />
@@ -102,12 +104,13 @@ function Cart() {
                     {formatRupiah(item.price * item.qty)}
                   </p>
                   <button
-                    onClick={() => removeItem(item.id)}
-                    className="text-red-400 hover:text-red-600 mt-1"
+                    onClick={() => removeItem(getItemId(item))}
+                    className="text-red-400 hover:text-red-600 mt-2 block ml-auto"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
+
               </div>
             ))}
           </div>

@@ -1,11 +1,14 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import useCartStore from '../store/cartStore'
 import { ArrowLeft, MapPin, CreditCard, Truck } from 'lucide-react'
+import useAuthStore from '../store/authStore'
 
 function Checkout() {
+  const user = useAuthStore(state => state.user)
   const { items, getTotalPrice } = useCartStore()
+  const navigate = useNavigate()
   const [form, setForm] = useState({
     nama: '',
     telepon: '',
@@ -29,10 +32,40 @@ function Checkout() {
 
   const selectedOngkir = ongkirOptions.find(o => o.id === pengiriman)
   const subtotal = getTotalPrice()
-  const total = subtotal + (selectedOngkir?.harga || 0)
+  const isGratisOngkir = subtotal >= 200000
+  const ongkirFinal = isGratisOngkir ? 0 : (selectedOngkir?.harga || 0)
+  const total = subtotal + ongkirFinal
+  
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleLanjutBayar = () => {
+    if (!form.nama || !form.telepon || !form.alamat || !form.kota || !form.provinsi || !form.kodePos) {
+      alert('Mohon lengkapi semua data pengiriman!')
+      return
+    }
+    navigate('/payment', {
+      state: {
+        form: { ...form, email: user?.email || '' },
+        pengiriman: { ...selectedOngkir, harga: ongkirFinal },
+        total
+      }
+    })
+  }
+
+  if (items.length === 0) {
+    return (
+      <Layout>
+        <div className="text-center py-20">
+          <p className="text-gray-500 text-lg mb-4">Keranjang kamu kosong</p>
+          <Link to="/shop" className="bg-primary text-white px-6 py-3 rounded-xl font-semibold">
+            Mulai Belanja
+          </Link>
+        </div>
+      </Layout>
+    )
   }
 
   return (
@@ -47,12 +80,27 @@ function Checkout() {
           <h1 className="text-2xl font-bold text-gray-800">Checkout</h1>
         </div>
 
+        {/* Steps */}
+        <div className="flex items-center gap-2 mb-8 text-sm">
+          <span className="bg-primary text-white px-3 py-1 rounded-full font-medium">
+            1. Keranjang
+          </span>
+          <span className="text-gray-400">→</span>
+          <span className="bg-primary text-white px-3 py-1 rounded-full font-medium">
+            2. Checkout
+          </span>
+          <span className="text-gray-400">→</span>
+          <span className="bg-gray-200 text-gray-500 px-3 py-1 rounded-full font-medium">
+            3. Pembayaran
+          </span>
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-6">
 
           {/* Left - Form */}
           <div className="flex-1 space-y-4">
 
-            {/* Alamat Pengiriman */}
+            {/* Alamat */}
             <div className="bg-white rounded-xl shadow p-6">
               <div className="flex items-center gap-2 font-bold text-gray-800 mb-4">
                 <MapPin size={18} className="text-primary" />
@@ -61,7 +109,7 @@ function Checkout() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-gray-600 mb-1 block">
-                    Nama Lengkap
+                    Nama Lengkap <span className="text-red-400">*</span>
                   </label>
                   <input
                     name="nama"
@@ -73,7 +121,7 @@ function Checkout() {
                 </div>
                 <div>
                   <label className="text-sm text-gray-600 mb-1 block">
-                    Nomor Telepon
+                    Nomor Telepon <span className="text-red-400">*</span>
                   </label>
                   <input
                     name="telepon"
@@ -85,7 +133,7 @@ function Checkout() {
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-sm text-gray-600 mb-1 block">
-                    Alamat Lengkap
+                    Alamat Lengkap <span className="text-red-400">*</span>
                   </label>
                   <textarea
                     name="alamat"
@@ -97,7 +145,9 @@ function Checkout() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-gray-600 mb-1 block">Kota</label>
+                  <label className="text-sm text-gray-600 mb-1 block">
+                    Kota <span className="text-red-400">*</span>
+                  </label>
                   <input
                     name="kota"
                     value={form.kota}
@@ -107,7 +157,9 @@ function Checkout() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-gray-600 mb-1 block">Provinsi</label>
+                  <label className="text-sm text-gray-600 mb-1 block">
+                    Provinsi <span className="text-red-400">*</span>
+                  </label>
                   <input
                     name="provinsi"
                     value={form.provinsi}
@@ -117,7 +169,9 @@ function Checkout() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-gray-600 mb-1 block">Kode Pos</label>
+                  <label className="text-sm text-gray-600 mb-1 block">
+                    Kode Pos <span className="text-red-400">*</span>
+                  </label>
                   <input
                     name="kodePos"
                     value={form.kodePos}
@@ -141,12 +195,20 @@ function Checkout() {
               </div>
             </div>
 
-            {/* Pilih Pengiriman */}
+            {/* Pengiriman */}
             <div className="bg-white rounded-xl shadow p-6">
               <div className="flex items-center gap-2 font-bold text-gray-800 mb-4">
                 <Truck size={18} className="text-primary" />
                 Pilih Pengiriman
               </div>
+
+              {/* Banner gratis ongkir */}
+              {isGratisOngkir && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-4 text-sm text-primary font-medium">
+                  🎉 Selamat! Kamu dapat gratis ongkir untuk semua kurir!
+                </div>
+              )}
+
               <div className="space-y-3">
                 {ongkirOptions.map(opt => (
                   <label
@@ -176,7 +238,14 @@ function Checkout() {
                       </div>
                     </div>
                     <span className="text-sm font-semibold text-primary">
-                      {formatRupiah(opt.harga)}
+                      {isGratisOngkir ? (
+                        <span className="flex flex-col items-end">
+                          <span className="line-through text-gray-400 text-xs">
+                            {formatRupiah(opt.harga)}
+                          </span>
+                          <span className="text-primary">GRATIS</span>
+                        </span>
+                      ) : formatRupiah(opt.harga)}
                     </span>
                   </label>
                 ))}
@@ -188,7 +257,6 @@ function Checkout() {
           {/* Right - Summary */}
           <div className="lg:w-80 shrink-0">
             <div className="bg-white rounded-xl shadow p-6 sticky top-24">
-
               <h2 className="text-lg font-bold text-gray-800 mb-4">
                 Ringkasan Pesanan
               </h2>
@@ -196,7 +264,7 @@ function Checkout() {
               {/* Items */}
               <div className="space-y-3 mb-4">
                 {items.map(item => (
-                  <div key={item.id} className="flex gap-3 items-center">
+                  <div key={item._id || item.id} className="flex gap-3 items-center">
                     <img
                       src={item.image}
                       alt={item.name}
@@ -222,8 +290,15 @@ function Checkout() {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Ongkos Kirim ({selectedOngkir?.label})</span>
-                  <span>{formatRupiah(selectedOngkir?.harga || 0)}</span>
+                  <span className={isGratisOngkir ? 'text-primary font-medium' : ''}>
+                    {isGratisOngkir ? 'GRATIS' : formatRupiah(ongkirFinal)}
+                  </span>
                 </div>
+                {!isGratisOngkir && (
+                  <p className="text-xs text-gray-400">
+                    Belanja {formatRupiah(200000 - subtotal)} lagi untuk gratis ongkir
+                  </p>
+                )}
                 <div className="flex justify-between font-bold text-gray-800 pt-2 border-t">
                   <span>Total</span>
                   <span className="text-primary text-lg">
@@ -232,15 +307,13 @@ function Checkout() {
                 </div>
               </div>
 
-              {/* Bayar Button */}
-              <Link
-                to="/payment"
-                state={{ form, pengiriman: selectedOngkir, total }}
+              <button
+                onClick={handleLanjutBayar}
                 className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-green-700 transition"
               >
                 <CreditCard size={18} />
                 Lanjut Pembayaran
-              </Link>
+              </button>
 
             </div>
           </div>
