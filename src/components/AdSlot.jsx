@@ -25,7 +25,7 @@ function AdSlot({ slot, className }) {
 
   if (!ad) {
     return (
-      <div className={`w-full bg-gray-100 border border-dashed border-gray-300 rounded-xl flex items-center justify-center text-gray-400 text-xs ${className || ''}`}>
+      <div className={`w-full bg-gray-100 border border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs ${className || ''}`}>
         Slot Iklan
       </div>
     )
@@ -33,7 +33,7 @@ function AdSlot({ slot, className }) {
 
   if (ad.type === 'image' && ad.imageUrl) {
     return (
-      <div className={`w-full overflow-hidden rounded-xl ${className || ''}`}>
+      <div className={`w-full overflow-hidden  ${className || ''}`}>
         <a href={ad.linkUrl || '#'} target="_blank" rel="noopener noreferrer">
           <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
         </a>
@@ -44,7 +44,7 @@ function AdSlot({ slot, className }) {
   if (ad.type === 'adsense' && ad.adsenseCode) {
     return (
       <div
-        className={`w-full overflow-hidden rounded-xl ${className || ''}`}
+        className={`w-full overflow-hidden  ${className || ''}`}
         dangerouslySetInnerHTML={{ __html: ad.adsenseCode }}
       />
     )
@@ -53,7 +53,7 @@ function AdSlot({ slot, className }) {
   if (ad.type === 'custom' && ad.customCode) {
     return (
       <div
-        className={`w-full overflow-hidden rounded-xl ${className || ''}`}
+        className={`w-full overflow-hidden  ${className || ''}`}
         dangerouslySetInnerHTML={{ __html: ad.customCode }}
       />
     )
