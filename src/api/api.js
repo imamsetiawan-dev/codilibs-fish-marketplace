@@ -101,3 +101,43 @@ export const uploadSingleImage = async (file) => {
   })
   return res.json()
 }
+// Ads
+export const getAds = async (slot) => {
+  try {
+    const query = slot ? `?slot=${slot}` : ''
+    const res = await fetch(`${BASE_URL}/api/ads${query}`)
+    if (!res.ok) return []
+    return res.json()
+  } catch (err) {
+    return []
+  }
+}
+export const getAllAds = async () => {
+  const res = await fetch(`${BASE_URL}/api/ads/all`)
+  return res.json()
+}
+
+export const createAd = async (data) => {
+  const res = await fetch(`${BASE_URL}/api/ads`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return res.json()
+}
+
+export const updateAd = async (id, data) => {
+  const res = await fetch(`${BASE_URL}/api/ads/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return res.json()
+}
+
+export const deleteAd = async (id) => {
+  const res = await fetch(`${BASE_URL}/api/ads/${id}`, {
+    method: 'DELETE',
+  })
+  return res.json()
+}

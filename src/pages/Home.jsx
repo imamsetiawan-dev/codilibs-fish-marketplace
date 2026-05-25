@@ -6,6 +6,7 @@ import { ShoppingCart, Star, Waves, Droplets, Sparkles, ChevronLeft, ChevronRigh
 import { getProducts } from '../api/api'
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
+import AdSlot from '../components/AdSlot'
 
 import guppy from '../assets/images/guppy.webp'
 import cupang from '../assets/images/cupang.webp'
@@ -146,10 +147,7 @@ function Home() {
 
       {/* Ads Slot 1 — Banner Atas (728x90 leaderboard) */}
       <section className="max-w-7xl mx-auto px-4 py-4">
-        <div className="w-full h-20 bg-gray-100 border border-dashed border-gray-300 rounded-xl flex items-center justify-center text-gray-400 text-xs">
-          {/* Ganti div ini dengan kode AdSense atau banner iklan lo */}
-          📢 Slot Iklan — 728x90 Leaderboard
-        </div>
+      <AdSlot slot="leaderboard-top" className="h-20" />
       </section>
 
       {/* Kategori */}
@@ -265,17 +263,11 @@ function Home() {
 
       {/* Ads Slot 2 — Square / Rectangle (300x250) */}
       <section className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Ads kiri */}
-          <div className="flex-1 h-32 bg-gray-100 border border-dashed border-gray-300 rounded-xl flex items-center justify-center text-gray-400 text-xs">
-            📢 Slot Iklan Kiri — 300x250
-          </div>
-          {/* Ads kanan */}
-          <div className="flex-1 h-32 bg-gray-100 border border-dashed border-gray-300 rounded-xl flex items-center justify-center text-gray-400 text-xs">
-            📢 Slot Iklan Kanan — 300x250
-          </div>
-        </div>
-      </section>
+  <div className="flex flex-col md:flex-row gap-4">
+    <AdSlot slot="rectangle-left" className="flex-1 h-32" />
+    <AdSlot slot="rectangle-right" className="flex-1 h-32" />
+  </div>
+</section>
 
       {/* Banner Promo */}
       <section className="max-w-7xl mx-auto px-4 py-4">

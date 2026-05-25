@@ -8,6 +8,7 @@ import orderRoutes from './routes/orders.js'
 import authRoutes from './routes/auth.js'
 import uploadRoutes from './routes/upload.js'
 import Order from './models/Order.js'
+import adRoutes from './routes/ads.js'
 
 dotenv.config()
 
@@ -31,6 +32,7 @@ app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/upload', uploadRoutes)
+app.use('/api/ads', adRoutes)
 
 // Create Transaction + Simpan Order ke DB
 app.post('/create-transaction', async (req, res) => {

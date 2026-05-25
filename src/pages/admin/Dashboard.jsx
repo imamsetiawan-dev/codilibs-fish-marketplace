@@ -11,6 +11,8 @@ import {
   Tooltip, ResponsiveContainer, BarChart, Bar, Legend
 } from 'recharts'
 import { getProducts, createProduct, updateProduct, deleteProduct, uploadImages, getOrders } from '../../api/api'
+import { getAllAds, createAd, updateAd, deleteAd } from '../../api/api'
+import { Megaphone } from 'lucide-react'
 
 // Data dummy grafik — nanti diganti data real dari order
 const dummyChartData = [
@@ -40,6 +42,20 @@ function Dashboard() {
     featured: false, isNewProduct: false,
   })
 
+  const [ads, setAds] = useState([])
+const [showAdModal, setShowAdModal] = useState(false)
+const [editAd, setEditAd] = useState(null)
+const [adForm, setAdForm] = useState({
+  title: '',
+  slot: 'leaderboard-top',
+  type: 'image',
+  imageUrl: '',
+  linkUrl: '',
+  adsenseCode: '',
+  customCode: '',
+  isActive: true,
+})
+
   const categories = ['Ikan Laut', 'Ikan Air Tawar', 'Ikan Koi', 'Pakan', 'Aksesoris']
 
   const formatRupiah = (num) =>
@@ -66,9 +82,19 @@ function Dashboard() {
     }
   }
 
+  const fetchAds = async () => {
+    try {
+      const data = await getAllAds()
+      setAds(data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   useEffect(() => {
     fetchProducts()
     fetchOrders()
+    fetchAds()
   }, [])
 
   // Hitung statistik dari orders
@@ -218,6 +244,15 @@ function Dashboard() {
               {orderPending}
             </span>
           )}
+        </button>
+        <button
+          onClick={() => { setActiveMenu('ads'); setShowSidebar(false) }}
+          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+            activeMenu === 'ads' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <Megaphone size={16} />
+          Iklan
         </button>
       </nav>
       <div className="p-4 border-t">
@@ -700,234 +735,459 @@ function Dashboard() {
             </div>
           )}
 
-        </div>
-      </main>
+       
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 md:p-6">
 
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-800">
-                {editProduct ? 'Edit Produk' : 'Tambah Produk Baru'}
-              </h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X size={20} />
-              </button>
+      {/* ===== ADS VIEW ===== */}
+{activeMenu === 'ads' && (
+  <div>
+    <div className="flex items-center justify-between mb-5">
+      <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+        Manajemen Iklan
+      </h1>
+
+      <button
+        onClick={() => {
+          setEditAd(null)
+          setAdForm({
+            title: '',
+            slot: 'leaderboard-top',
+            type: 'image',
+            imageUrl: '',
+            linkUrl: '',
+            adsenseCode: '',
+            customCode: '',
+            isActive: true,
+          })
+          setShowAdModal(true)
+        }}
+        className="bg-primary text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium flex items-center gap-2 hover:bg-green-700 transition"
+      >
+        <Plus size={15} />
+        Tambah Iklan
+      </button>
+    </div>
+
+    {/* SLOT STATUS */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      {[
+        {
+          slot: 'leaderboard-top',
+          label: 'Leaderboard Atas',
+          size: '728x90',
+        },
+        {
+          slot: 'rectangle-left',
+          label: 'Rectangle Kiri',
+          size: '300x250',
+        },
+        {
+          slot: 'rectangle-right',
+          label: 'Rectangle Kanan',
+          size: '300x250',
+        },
+        {
+          slot: 'footer',
+          label: 'Footer Banner',
+          size: '728x90',
+        },
+      ].map((s) => {
+        const activeAd = ads.find(
+          (a) => a.slot === s.slot && a.isActive
+        )
+
+        return (
+          <div
+            key={s.slot}
+            className={`rounded-xl p-3 border-2 transition ${
+              activeAd
+                ? 'border-primary bg-green-50'
+                : 'border-dashed border-gray-300 bg-gray-50'
+            }`}
+          >
+            <p className="text-xs font-semibold text-gray-700">
+              {s.label}
+            </p>
+
+            <p className="text-xs text-gray-400 mt-1">
+              {s.size}
+            </p>
+
+            <div className="mt-2">
+              {activeAd ? (
+                <span className="text-xs font-medium text-primary">
+                  ✅ Aktif
+                </span>
+              ) : (
+                <span className="text-xs font-medium text-gray-400">
+                  ⭕ Kosong
+                </span>
+              )}
             </div>
+          </div>
+        )
+      })}
+    </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Nama Produk <span className="text-red-400">*</span></label>
-                <input
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  placeholder="Contoh: Ikan Cupang Halfmoon"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </div>
+    {/* EMPTY STATE */}
+    {ads.length === 0 ? (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+        <Megaphone
+          size={52}
+          className="mx-auto text-gray-300 mb-4"
+        />
 
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Kategori <span className="text-red-400">*</span></label>
-                <select
-                  value={form.category}
-                  onChange={e => setForm({ ...form, category: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+        <h2 className="text-lg font-semibold text-gray-700 mb-1">
+          Belum ada iklan
+        </h2>
+
+        <p className="text-sm text-gray-400">
+          Tambahkan banner atau kode AdSense untuk mulai monetisasi
+        </p>
+      </div>
+    ) : (
+      <>
+        {/* DESKTOP TABLE */}
+        <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr className="text-left text-gray-500">
+                <th className="px-4 py-3">Judul</th>
+                <th className="px-4 py-3">Slot</th>
+                <th className="px-4 py-3">Tipe</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Aksi</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {ads.map((ad) => (
+                <tr
+                  key={ad._id}
+                  className="border-b last:border-0 hover:bg-gray-50 transition"
                 >
-                  <option value="">Pilih kategori</option>
-                  {categories.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm text-gray-600 mb-1 block">Harga Jual <span className="text-red-400">*</span></label>
-                  <input
-                    type="number"
-                    value={form.price}
-                    onChange={e => setForm({ ...form, price: e.target.value })}
-                    placeholder="85000"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-gray-600 mb-1 block">Harga Coret</label>
-                  <input
-                    type="number"
-                    value={form.originalPrice}
-                    onChange={e => setForm({ ...form, originalPrice: e.target.value })}
-                    placeholder="100000"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Stok (ekor)</label>
-                <input
-                  type="number"
-                  value={form.stock}
-                  onChange={e => setForm({ ...form, stock: e.target.value })}
-                  placeholder="10"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </div>
-
-              {/* Upload Gambar */}
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Foto Produk (Maks 5)</label>
-                {(form.images || []).length < 5 && (
-                  <label className={`w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition ${
-                    uploadingImages ? 'border-gray-200 bg-gray-50' : 'border-primary hover:bg-green-50'
-                  }`}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageUpload}
-                      disabled={uploadingImages}
-                      className="hidden"
-                    />
-                    {uploadingImages ? (
-                      <div className="flex items-center gap-2 text-gray-500 text-sm">
-                        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        Mengupload...
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <ImagePlus size={24} className="mx-auto text-primary mb-1" />
-                        <p className="text-sm text-primary font-medium">Klik untuk upload foto</p>
-                        <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP — maks 5MB</p>
-                      </div>
-                    )}
-                  </label>
-                )}
-
-                {(form.images || []).length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-xs text-gray-400 mb-2">⭐ jadikan utama | ✕ hapus</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {form.images.map((img, index) => (
-                        <div key={index} className="relative group rounded-lg overflow-hidden border">
-                          <img src={img} alt={`Foto ${index + 1}`} className="w-full h-24 object-cover" />
-                          {index === 0 && (
-                            <span className="absolute top-1 left-1 bg-primary text-white text-xs px-1.5 py-0.5 rounded-full">
-                              Utama
-                            </span>
-                          )}
-                          <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                            {index !== 0 && (
-                              <button onClick={() => handleSetMainImage(index)} className="bg-white text-yellow-500 p-1.5 rounded-full">
-                                <Star size={12} />
-                              </button>
-                            )}
-                            <button onClick={() => handleRemoveImage(index)} className="bg-white text-red-500 p-1.5 rounded-full">
-                              <X size={12} />
-                            </button>
-                          </div>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      {ad.imageUrl ? (
+                        <img
+                          src={ad.imageUrl}
+                          alt={ad.title}
+                          className="w-14 h-10 object-cover rounded-lg border"
+                        />
+                      ) : (
+                        <div className="w-14 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                          <Megaphone
+                            size={16}
+                            className="text-gray-400"
+                          />
                         </div>
-                      ))}
+                      )}
+
+                      <div>
+                        <p className="font-medium text-gray-800">
+                          {ad.title}
+                        </p>
+
+                        {ad.linkUrl && (
+                          <p className="text-xs text-gray-400 truncate max-w-[180px]">
+                            {ad.linkUrl}
+                          </p>
+                        )}
+                      </div>
                     </div>
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <span className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
+                      {ad.slot}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium">
+                      {ad.type}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        ad.isActive
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {ad.isActive ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEditAd(ad)
+                          setAdForm({ ...ad })
+                          setShowAdModal(true)
+                        }}
+                        className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
+                      >
+                        <Pencil size={14} />
+                      </button>
+
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Hapus iklan ini?')) return
+
+                          await deleteAd(ad._id)
+                          await fetchAds()
+                        }}
+                        className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* MOBILE CARD */}
+        <div className="md:hidden space-y-3">
+          {ads.map((ad) => (
+            <div
+              key={ad._id}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
+            >
+              <div className="flex items-start gap-3">
+                {ad.imageUrl ? (
+                  <img
+                    src={ad.imageUrl}
+                    alt={ad.title}
+                    className="w-16 h-14 object-cover rounded-lg border"
+                  />
+                ) : (
+                  <div className="w-16 h-14 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <Megaphone
+                      size={18}
+                      className="text-gray-400"
+                    />
                   </div>
                 )}
 
-                <div className="mt-3">
-                  <p className="text-xs text-gray-400 mb-1">Atau pakai URL gambar:</p>
-                  <input
-                    value={form.image}
-                    onChange={e => setForm({ ...form, image: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                  />
-                  {form.image && (form.images || []).length === 0 && (
-                    <img
-                      src={form.image}
-                      alt="preview"
-                      className="mt-2 w-full h-32 object-cover rounded-lg"
-                      onError={e => e.target.style.display = 'none'}
-                    />
-                  )}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-800 truncate">
+                    {ad.title}
+                  </h3>
+
+                  <p className="text-xs text-gray-400 mt-1">
+                    {ad.slot}
+                  </p>
+
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-1 rounded-full">
+                      {ad.type}
+                    </span>
+
+                    <span
+                      className={`text-[10px] px-2 py-1 rounded-full ${
+                        ad.isActive
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {ad.isActive ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => {
+                      setEditAd(ad)
+                      setAdForm({ ...ad })
+                      setShowAdModal(true)
+                    }}
+                    className="p-2 bg-blue-50 text-blue-600 rounded-lg"
+                  >
+                    <Pencil size={14} />
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      if (!confirm('Hapus iklan ini?')) return
+
+                      await deleteAd(ad._id)
+                      await fetchAds()
+                    }}
+                    className="p-2 bg-red-50 text-red-500 rounded-lg"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
-
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Deskripsi</label>
-                <textarea
-                  value={form.description}
-                  onChange={e => setForm({ ...form, description: e.target.value })}
-                  placeholder="Ceritakan tentang produk ini..."
-                  rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Spesifikasi</label>
-                <textarea
-                  value={form.specification}
-                  onChange={e => setForm({ ...form, specification: e.target.value })}
-                  placeholder="Ukuran, suhu, pH, dll..."
-                  rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Cara Perawatan</label>
-                <textarea
-                  value={form.care}
-                  onChange={e => setForm({ ...form, care: e.target.value })}
-                  placeholder="Tips perawatan produk..."
-                  rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary resize-none"
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.featured}
-                    onChange={e => setForm({ ...form, featured: e.target.checked })}
-                    className="accent-primary"
-                  />
-                  Produk Unggulan
-                </label>
-                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.isNewProduct}
-                    onChange={e => setForm({ ...form, isNewProduct: e.target.checked })}
-                    className="accent-primary"
-                  />
-                  Produk Baru
-                </label>
-              </div>
             </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving || uploadingImages}
-                className="flex-1 bg-primary text-white py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-green-700 transition text-sm disabled:opacity-60"
-              >
-                <Save size={15} />
-                {saving ? 'Menyimpan...' : editProduct ? 'Simpan' : 'Tambah'}
-              </button>
-            </div>
-
-          </div>
+          ))}
         </div>
-      )}
+      </>
+    )}
+  </div>
+)}
+ </div>
+    </main>
+    
+{/* Modal Ads */}
+{showAdModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 md:p-6">
+
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-lg font-bold text-gray-800">
+          {editAd ? 'Edit Iklan' : 'Tambah Iklan Baru'}
+        </h2>
+        <button onClick={() => setShowAdModal(false)} className="text-gray-400 hover:text-gray-600">
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm text-gray-600 mb-1 block">Judul Iklan</label>
+          <input
+            value={adForm.title}
+            onChange={e => setAdForm({ ...adForm, title: e.target.value })}
+            placeholder="Contoh: Banner Promo Maret"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm text-gray-600 mb-1 block">Slot Iklan</label>
+          <select
+            value={adForm.slot}
+            onChange={e => setAdForm({ ...adForm, slot: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+          >
+            <option value="leaderboard-top">Leaderboard Atas (728x90)</option>
+            <option value="rectangle-left">Rectangle Kiri (300x250)</option>
+            <option value="rectangle-right">Rectangle Kanan (300x250)</option>
+            <option value="footer">Footer Banner (728x90)</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="text-sm text-gray-600 mb-1 block">Tipe Iklan</label>
+          <select
+            value={adForm.type}
+            onChange={e => setAdForm({ ...adForm, type: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+          >
+            <option value="image">Gambar (Image)</option>
+            <option value="adsense">Google AdSense</option>
+            <option value="custom">Custom HTML</option>
+          </select>
+        </div>
+
+        {adForm.type === 'image' && (
+          <>
+            <div>
+              <label className="text-sm text-gray-600 mb-1 block">URL Gambar</label>
+              <input
+                value={adForm.imageUrl}
+                onChange={e => setAdForm({ ...adForm, imageUrl: e.target.value })}
+                placeholder="https://..."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+              {adForm.imageUrl && (
+                <img
+                  src={adForm.imageUrl}
+                  alt="preview"
+                  className="mt-2 w-full h-24 object-cover rounded-lg"
+                  onError={e => e.target.style.display = 'none'}
+                />
+              )}
+            </div>
+            <div>
+              <label className="text-sm text-gray-600 mb-1 block">URL Tujuan (klik)</label>
+              <input
+                value={adForm.linkUrl}
+                onChange={e => setAdForm({ ...adForm, linkUrl: e.target.value })}
+                placeholder="https://..."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+          </>
+        )}
+
+        {adForm.type === 'adsense' && (
+          <div>
+            <label className="text-sm text-gray-600 mb-1 block">Kode AdSense</label>
+            <textarea
+              value={adForm.adsenseCode}
+              onChange={e => setAdForm({ ...adForm, adsenseCode: e.target.value })}
+              placeholder="Paste kode AdSense di sini..."
+              rows={4}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary resize-none font-mono"
+            />
+          </div>
+        )}
+
+        {adForm.type === 'custom' && (
+          <div>
+            <label className="text-sm text-gray-600 mb-1 block">Custom HTML</label>
+            <textarea
+              value={adForm.customCode}
+              onChange={e => setAdForm({ ...adForm, customCode: e.target.value })}
+              placeholder="Paste kode HTML iklan di sini..."
+              rows={4}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary resize-none font-mono"
+            />
+          </div>
+        )}
+
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={adForm.isActive}
+            onChange={e => setAdForm({ ...adForm, isActive: e.target.checked })}
+            className="accent-primary"
+          />
+          Aktifkan Iklan
+        </label>
+      </div>
+
+      <div className="flex gap-3 mt-6">
+        <button
+          onClick={() => setShowAdModal(false)}
+          className="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
+        >
+          Batal
+        </button>
+        <button
+          onClick={async () => {
+            if (!adForm.title || !adForm.slot) {
+              alert('Judul dan slot wajib diisi!')
+              return
+            }
+            if (editAd) {
+              await updateAd(editAd._id, adForm)
+            } else {
+              await createAd(adForm)
+            }
+            await fetchAds()
+            setShowAdModal(false)
+          }}
+          className="flex-1 bg-primary text-white py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-green-700 transition text-sm"
+        >
+          <Save size={15} />
+          {editAd ? 'Simpan' : 'Tambah'}
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
 
     </div>
   )
