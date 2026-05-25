@@ -33,7 +33,7 @@ function AdSlot({ slot, className }) {
 
   if (ad.type === 'image' && ad.imageUrl) {
     return (
-      <div className={`w-full overflow-hidden rounded-xl ${className || ''}`}>
+      <div className={`w-full overflow-hidden  ${className || ''}`}>
         <a href={ad.linkUrl || '#'} target="_blank" rel="noopener noreferrer">
           <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
         </a>
